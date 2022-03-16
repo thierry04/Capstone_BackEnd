@@ -1,12 +1,13 @@
-import { response } from "express";
-import articleModels from "../models/article.models";
 import Article from "../models/article.models";
+import {validate, articleValidation} from "../validations"
 
 export const createArticle =async(req, res)=>{
     const data = {
         ...req.body
     };
     console.log(req.body);
+    const { details: errors } = validate(articleValidation.createArticleSchema, req.body)
+    if (errors) return res.status(400).json({ message: `please provide ${errors[0].context.key}` })   
     if(req.body === undefined) return res.status(404).json({message:"data not found"})
     const createdArticle = await Article.create(data);
     console.log(createdArticle,'====');
@@ -31,6 +32,8 @@ export const UpdateArticle = async (req, res) => {
     const foundOneArticle = await Article.findOne({ _id })
     if (!foundOneArticle) return res.status(404).json({ message: "one article not found" })
     const data = {title:req.body.title || foundOneArticle.title, content:req.body.content || foundOneArticle.content}
+    const { details: errors } = validate(articleValidation.updateArticleSchema, req.body)
+    if (errors) return res.status(400).json({ message: `please provide ${errors[0].context.key}` })
     const updateOneArticle = await Article.findOneAndUpdate({ _id },data)
     if (!updateOneArticle) return res.status(404).json({ message: "one article not found" })
     const updated = await Article.findOne({_id})
