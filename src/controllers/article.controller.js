@@ -13,7 +13,7 @@ export const createArticle =async(req, res)=>{
     return res.status(200).json({message:"successfully created an article", createdArticle})
 }
 
-export const findArticle = async(req, res)=>{
+export const findArticle = async(req,res)=>{
     const foundArticle = await Article.find()
     if (!foundArticle) return res.status(404).json({message:"article not found"})
     return res.status(200).json({message:"success",foundArticle})
