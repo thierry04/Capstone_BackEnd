@@ -1,6 +1,5 @@
 import bcryptjs, {genSalt} from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import userModels from "../models/article.models";
 import User from "../models/user.models";
 import {validate, userValidation} from "../validations/index"
 
