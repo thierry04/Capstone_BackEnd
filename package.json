@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --exec npx babel-node src/index.js",
+    "dev": "non --exec npx babel-node src/index.js",
     "test": "mocha --require @babel/register",
     "build": "babel ./src --out-dir app --copy-files",
     "start": "npm run build && node ./app/index.js"
