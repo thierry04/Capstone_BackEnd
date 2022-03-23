@@ -6,7 +6,6 @@ const userRoutes = Router();
 const {auth} = authMiddleware;
 
 userRoutes.post("/", createUser)
-userRoutes.post("/", createUser);
 userRoutes.get("/", findUser);
 userRoutes.get("/:id", findOneUser);
 userRoutes.patch("/:id", updateUser);
