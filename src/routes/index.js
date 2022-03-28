@@ -1,14 +1,14 @@
-import {Router} from 'express';
-import articleRoutes from "./article";
-import userRoutes from './user';
-import queryRoutes from './query';
-import commentRoutes from './comment';
+import { Router } from "express";
+import ArticleRouter from "./article.routes";
+import profileRouter from "./profile.routes";
+import QueriesRouter from "./queries.routes";
+import commentRouter from "./comment.routes";
 
 const allRoutes = Router();
 
-allRoutes.use("/article", articleRoutes);
-allRoutes.use("/user",userRoutes);
-allRoutes.use("/query", queryRoutes);
-allRoutes.use("/comment",commentRoutes )
+allRoutes.use("/posts", ArticleRouter);
+allRoutes.use("/users", profileRouter);
+allRoutes.use("/queries", QueriesRouter);
+allRoutes.use("/", commentRouter);
 
 export default allRoutes;

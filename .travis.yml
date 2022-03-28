@@ -1,0 +1,28 @@
+language: node_js
+
+os: windows
+
+env:
+  global:
+    - secure: {{ENCRYPTED_MONGO_URL_YEST_ONLINE}}
+    - secure: {{ENCRYPTED_JWT_SECRET}}
+
+node_js:
+  - "16.x"
+
+services:
+  - mongodb
+
+cache:
+  npm: false
+
+notifications:
+  email: false
+
+script:
+  - npm ci
+  - npm test
+  - npm run build
+
+after_success:
+  - npm run coverage

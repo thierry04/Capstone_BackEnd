@@ -1,0 +1,586 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "this is documentation of my-brand-server",
+    "version": "1.0.0",
+    "title": "My-brand-server",
+    "contact": {
+      "email": "ttwahirwa2@gmail.com.com",
+      "name": "Thierry Twahirwa"
+    }
+  },
+  "basePath": "/api/v1",
+  "tags": [
+    {
+      "name": "Post",
+      "description": "article creation "
+    },
+    {
+      "name": "User",
+      "description": "at this collection of all endpoints related to users"
+    }
+  ],
+  "schemes": ["http", "https"],
+  "paths": {
+    "/posts": {
+      "post": {
+        "tags": ["Post"],
+        "summary": "create new post <Only authenticated user  can do this>",
+        "dscription": "here we create new post ",
+        "consumes": ["multipart/form-data"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "title",
+            "in": "formData",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "content",
+            "in": "formData",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "imageUrl",
+            "in": "formData",
+            "type": "file",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successfully created post| performed by admin",
+            "schema": {
+              "$ref": "#/definitions/Post"
+            }
+          },
+          "409": {
+            "description": "please fill all required fields"
+          },
+          "208": {
+            "description": "title already exists please create another title"
+          },
+          "404": {
+            "description": "Article not created"
+          }
+        }
+      },
+      "get": {
+        "tags": ["Post"],
+        "summary": "this endpoint will display all posts we have",
+        "dscription": " ",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successfully retrieved all posts"
+          },
+          "404": {
+            "description": "no posts found "
+          }
+        }
+      }
+    },
+    "/posts/{postId}": {
+      "get": {
+        "tags": ["Post"],
+        "summary": "this endpoint will display post according to passed id",
+        "description": " ",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "description": " fill postId in the given path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "this is a post with passed id"
+          },
+          "404": {
+            "description": "no Post found"
+          }
+        }
+      },
+
+      "put": {
+        "tags": ["Post"],
+        "summary": "this endpoint will update post with given id",
+        "description": " ",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "description": " fill postId in the given path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "title",
+            "in": "formData",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "content",
+            "in": "formData",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "imageUrl",
+            "in": "formData",
+            "required": false,
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "post updated successfully"
+          },
+          "409": {
+            "description": "please update"
+          },
+          "404": {
+            "description": "post not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Post"],
+        "summary": "this endpoint will help to delete post with given id",
+        "description": " ",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "descrpition": "please pass postId here",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "post deleted Successfuly"
+          },
+          "404": {
+            "description": "post not found to delete"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["User"],
+        "summary": "at this end point we will display all registered users",
+        "description": " ",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "retrieve all registerred users"
+          },
+          "404": {
+            "description": "no registered user foumd"
+          }
+        }
+      }
+    },
+    "/users/register": {
+      "post": {
+        "tags": ["User"],
+        "summary": "at this endpoint we wi be creating(registering) a user",
+        "description": " ",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Users"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "user successfully registered"
+          },
+          "208": {
+            "description": "given email already exists"
+          },
+          "409": {
+            "description": "please fill all required fields"
+          },
+          "500": {
+            "description": "failed to create a user internal server error"
+          }
+        }
+      }
+    },
+    "/users/{userId}": {
+      "get": {
+        "tags": ["User"],
+        "summary": "this endpoint displays a user with given id if we have that user",
+        "description": " ",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "user with passed id retrieved"
+          },
+          "404": {
+            "description": "user with given id not found"
+          }
+        }
+      },
+      "put": {
+        "tags": ["User"],
+        "summary": "at this endpoint we will ne updating any user informations",
+        "description": " ",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "username",
+            "in": "formData",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "password",
+            "in": "formData",
+            "type": "string",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successfully updated user with given id"
+          },
+          "409": {
+            "description": "please fill in all fields"
+          },
+          "404": {
+            "description": "user you want to update does not exist"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["User"],
+        "summary": "at this endpoint we will be able to remove(delete) a user with given id",
+        "description": " ",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          },
+
+          {
+            "name": "userId",
+            "in": "path",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successfully removed user with given id"
+          },
+          "404": {
+            "description": "user credentials not found to delete"
+          }
+        }
+      }
+    },
+    "/users/login": {
+      "post": {
+        "tags": ["User"],
+        "summary": "this endpoint will beauthenticatin a user and generating a token which will be used to create, update and delete post",
+        "description": " ",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/login"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "a user is loogedin successfully"
+          },
+          "401": {
+            "description": "wrong credentials emali and password must be valid"
+          },
+          "404": {
+            "description": "user credentials not fuond to authenticate"
+          },
+          "400": {
+            "description": "please fill all required fields"
+          }
+        }
+      }
+    },
+    "/queries/send-message": {
+      "post": {
+        "tags": ["Queries"],
+        "summary": "this endpoint wimplements the sending of a message to the admin",
+        "description": " ",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Queries"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Message is sent successfully"
+          },
+          "404": {
+            "description": "Message is not sent"
+          },
+          "400": {
+            "description": "please fill all required fields"
+          }
+        }
+      }
+    },
+    "/queries/all-messages": {
+      "get": {
+        "tags": ["Queries"],
+        "summary": "this endpoint implements getting all sent messages from the users of the web",
+        "description": " ",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Messages retrieved successfully"
+          },
+          "401": {
+            "description": "please login first"
+          },
+          "404": {
+            "description": "messages not retrieved"
+          }
+        }
+      }
+    },
+    "/{PostId}/comment": {
+      "post": {
+        "tags": ["Comments"],
+        "summary": "this endpoint implements getting all sent messages from the users of the web",
+        "description": " ",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "PostId",
+            "in": "path",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Comments"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "comment created successfully"
+          },
+          "400": {
+            "escription": "please fill in all fields"
+          },
+          "404": {
+            "description": "messages not retrieved"
+          }
+        }
+      }
+    },
+    "/{PostId}/all-comments": {
+      "get": {
+        "tags": ["Comments"],
+        "summary": "this endpoint implements getting all sent messages from the users of the web",
+        "description": " ",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "PostId",
+            "in": "path",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "comment created successfully"
+          },
+          "404": {
+            "description": "messages not retrieved"
+          }
+        }
+      }
+    },
+    "/post/{PostId}/likes": {
+      "post": {
+        "tags": ["likes"],
+        "summary": "this endpoint implements liking a post",
+        "description": " ",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "PostId",
+            "in": "path",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successfully liked an article"
+          },
+          "404": {
+            "description": "article does not exist"
+          },
+          "500": {
+            "description": "internal server error"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Post": {
+      "type": "object",
+      "required": ["title", "content", "imageUrl"],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "file"
+        }
+      }
+    },
+    "Users": {
+      "type": "object",
+      "required": ["userName", "email", "message"],
+      "properties": {
+        "userName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "login": {
+      "type": "object",
+      "required": ["email", "message"],
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "Queries": {
+      "type": "object",
+      "required": ["guestName", "email", "message"],
+      "properties": {
+        "guestName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "Comments": {
+      "type": "object",
+      "required": ["name", "comment"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

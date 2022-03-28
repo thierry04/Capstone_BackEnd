@@ -1,50 +1,135 @@
-import Article from "../models/article.models";
-import {validate, articleValidation} from "../validations"
+import articleServices from "../services/article.service";
+import Response from "../utils";
+import { articleValidate, validate } from "../validations";
+import cloudinary from "../config/cloudinary";
 
-export const createArticle =async(req, res)=>{
-    const data = {
-        ...req.body
-    };
-    console.log(req.body);
-    const { details: errors } = validate(articleValidation.createArticleSchema, req.body)
-    if (errors) return res.status(400).json({ message: `please provide ${errors[0].context.key}` })   
-    if(req.body === undefined) return res.status(404).json({message:"data not found"})
-    const createdArticle = await Article.create(data);
-    console.log(createdArticle,'====');
-    return res.status(200).json({message:"successfully created an article", createdArticle})
+const {
+  createArticle,
+  readAllArticles,
+  readSingleArticle,
+  updateArticle,
+  deleteArticle,
+} = articleServices;
+
+class articleController {
+  static async createArticle(req, res) {
+    try {
+      const results = await cloudinary.uploader.upload(req.file.path);
+      const { title, content } = req.body;
+      const { details: errors } = validate(
+        articleValidate.createArticleSchema,
+        req.body
+      );
+      if (errors)
+        return Response.error(
+          res,
+          409,
+          `please provide ${errors[0].context.key} of at least ${errors[0].context.limit} character length`
+        );
+      const articleCreate = await createArticle({
+        title,
+        content,
+        imageUrl: results.url,
+        cloudinary_id: results.public_id,
+      });
+      if (!articleCreate)
+        return Response.error(res, 404, 'article not created');
+      articleCreate.save();
+
+      return Response.success(
+        res,
+        201,
+        'article created successfully',
+        articleCreate
+      );
+    } catch (error) {
+      return Response.error(res, 500, 'internal server error', error);
+    }
+  }
+
+  static async readAllArticles(req, res) {
+    try {
+      const findAllArticles = await readAllArticles();
+      if (!findAllArticles)
+        return Response.error(res, 404, 'No article was found');
+      return Response.success(
+        res,
+        200,
+        'Retrieved all saved article',
+        findAllArticles
+      );
+    } catch (error) {
+      return Response.error(res, 500, 'internal server error', error);
+    }
+  }
+
+  static async singleArticle(req, res) {
+    try {
+      const singleArticle = await readSingleArticle({ id: req.params.id });
+      if (!singleArticle)
+        return Response.error(res, 404, 'Provide an id for an article');
+
+      return Response.success(
+        res,
+        200,
+        'article retrieved successfully',
+        singleArticle
+      );
+    } catch (error) {
+      return Response.error(res, 500, 'internal server error', error);
+    }
+  }
+
+  static async updateOneArticle(req, res) {
+    try {
+      const findArticle = await readSingleArticle({ id: req.params.id });
+      if (!findArticle) return Response.error(res, 404, 'article not found!');
+
+      const { details: errors } = validate(
+        articleValidate.updateArticleSchema,
+        req.body
+      );
+      if (errors)
+        return Response.error(
+          res,
+          400,
+          `please provide ${errors[0].context.key} of at least ${errors[0].context.limit} character length`
+        );
+
+      await cloudinary.uploader.destroy(findArticle.cloudinary_id);
+      const results = await cloudinary.uploader.upload(req.file.path);
+      const data = {
+        title: req.body.title || findArticle.title,
+        content: req.body.content || findArticle.content,
+        imageUrl: results.url || findArticle.imageUrl,
+        cloudinary_id: results.public_id || findArticle.cloudinary_id,
+      };
+      const updatedArticle = await updateArticle(
+        {
+          id: req.params.id,
+        },
+        data
+      );
+      if (!updateArticle)
+        return Response.error(res, 500, 'article not updated');
+
+      return Response.success(
+        res,
+        200,
+        'successfuly updated an article',
+        updatedArticle
+      );
+    } catch (error) {
+      return Response.error(res, 500, 'internal server error', error);
+    }
+  }
+
+  static async removeArticle(req, res) {
+    const removeArticle = await deleteArticle({ id: req.params.id });
+    if (!removeArticle) return Response.error(res, 404, 'article not found');
+    await cloudinary.uploader.destroy(removeArticle.cloudinary_id);
+    return Response.success(res, 200, 'Article deleted successfuly');
+  }
 }
 
-export const findArticle = async(req,res)=>{
-    const foundArticle = await Article.find()
-    if (!foundArticle) return res.status(404).json({message:"article not found"})
-    return res.status(200).json({message:"success",foundArticle})
-}
-
-export const findOneArticle = async(req, res)=>{
-    const _id = req.params.id
-    const findOneArticle = await Article.findOne({_id})
-    if(!findOneArticle) return res.status(404).json({message:"one article not found"})
-    return res.status(200).json({message:"success",findOneArticle})
-}
-
-export const UpdateArticle = async (req, res) => {
-    const _id = req.params.id
-    const foundOneArticle = await Article.findOne({ _id })
-    if (!foundOneArticle) return res.status(404).json({ message: "one article not found" })
-    const data = {title:req.body.title || foundOneArticle.title, content:req.body.content || foundOneArticle.content}
-    const { details: errors } = validate(articleValidation.updateArticleSchema, req.body)
-    if (errors) return res.status(400).json({ message: `please provide ${errors[0].context.key}` })
-    const updateOneArticle = await Article.findOneAndUpdate({ _id },data)
-    if (!updateOneArticle) return res.status(404).json({ message: "one article not found" })
-    const updated = await Article.findOne({_id})
-    return res.status(200).json({ message: "success", updated})
-}
-
-export const DeleteArticle = async (req, res) => {
-    const _id = req.params.id
-    const foundOneArticle = await Article.findOne({ _id })
-    if (!foundOneArticle) return res.status(404).json({ message: "one article not found" })
-    await Article.findOneAndDelete({ _id})
-    return res.status(200).json({ message: "Article successfully deleted" })
-}
-
+export default articleController;

@@ -1,12 +1,35 @@
 import "dotenv/config";
-import { verify } from "jsonwebtoken";
+import { sign, verify } from "jsonwebtoken";
+import { genSalt, hash as _hash, compare } from "bcryptjs";
 import { config } from "dotenv";
 
 config();
-const { TOKEN_SECRET } = process.env;
+const { JWT_SECRET } = process.env;
 
+class authentication {
+  static async encryptPassword(password) {
+    const salt = await genSalt(10);
+    const hash = await _hash(password, salt);
+    if (!hash) return false;
+    return hash;
+  }
 
-    export const verifyToken = async(token, secret = TOKEN_SECRET)=> {
-        const decoded = verify(token, secret);
-        return decoded;
-    };
+  static async decryptPassword(password, hash) {
+    const isValid = await compare(password, hash);
+    if (!isValid) return false;
+    return isValid;
+  }
+
+  static async signToken({ email }, secret = JWT_SECRET, duration = null) {
+    const tokenOptions = duration ? { expiresIn: duration } : undefined;
+    const token = sign({ email }, secret, tokenOptions);
+
+    return token;
+  }
+
+  static async verifyToken(token, secret = JWT_SECRET) {
+    const decoded = verify(token, secret);
+    return decoded;
+  }
+}
+export default authentication;

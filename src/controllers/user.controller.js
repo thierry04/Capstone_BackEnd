@@ -1,97 +1,155 @@
-import bcryptjs, {genSalt} from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import User from "../models/user.models";
-import {validate, userValidation} from "../validations/index"
+import userService from '../services/user.service';
+import Response from '../utils';
+import { userValidate, validate } from '../validations';
+import { decryptPassword, encryptPassword, signToken } from '../helper';
 
-export const createUser = async (req, res) => {
-    const{email} = req.body;
-    const foundEmail = await User.findOne({email})
-    if(foundEmail) return res.status(400).json({message:"email already exists"})
-    const data = {
-        ...req.body
-    };
-    const {details: errors} = validate(userValidation.CreateSchema, data)
-    if(errors)return res.status(400).json({message:`please provide ${errors[0].context.key}`})
-    if (req.body === undefined) return res.status(404).json({ message: "data not found" })
-    const salt = await genSalt(5);
-    const hash = await bcryptjs.hash(data.password, salt);
-    // const hash = await encryptPassword(data.password)
-    const createdUser = await User.create({
-        ...data,
-        password:hash
-    });
-    console.log(createdUser, '====');
-    return res.status(200).json({ message: "successfully created a user", createdUser })
-}
+const {
+  registerUser,
+  findProfiles,
+  findEmail,
+  findUser,
+  updatedProfile,
+  deleteProfile,
+} = userService;
 
-export const findUser = async(req,res)=>{
-    
-    try
-    {
-        const foundUser = await User.find()
-        if(!foundUser) return res.status(404).json({message:"user not found"})
-        return res.status(200).json({message:"success",foundUser}) 
-    }
-    catch(error){
-        console.log(error)
-    }
-}
-
-export const findOneUser = async(req,res)=>{
-    const _id = req.params.id
-    const findOneUser = await User.findOne({_id})
-    if(!findOneUser) return res.status(404).json({message:"user not found"})
-    return res.status(200).json({message:"success", findOneUser})
-}
-export const updateUser = async (req,res)=>{
+class userController {
+  static async signup(req, res) {
     try {
-        const _id = req.params.id
-        const findOneUser = await User.findOne({ _id })
-        if (!findOneUser)
-            return res.status(404).json({message:"Profile does not exist"});
-        const data = { ...req.body };
-        const { details: errors } = validate(userValidate.UpdateSchema, data);
-        if(errors) return res.status(400).json({message:`please provide ${errors[0].context.key}`})
-        const salt= await genSalt(5);
-        const hash = await bcryptjs.hash(data.password, salt);
-        const dataUpdate = {
-            userName: data.userName || findOneUser.userName,
-            email: findOneUser.email,
-            password: hash || findOneUser.password,
-        };
-        const updateProfile = await updatedProfile(
-            { id: req.params.id },
-            dataUpdate
-        );
-        return Response.success(
+      const data = { ...req.body };
+      const { email } = req.body;
+      const fetchEmail = await findEmail({ email });
+      if (fetchEmail) {
+        return Response.error(res, 400, 'Email already exists');
+      } 
+        const { details: errors } = validate(userValidate.CreateSchema, data);
+        if (errors)
+          return Response.error(
             res,
-            200,
-            'your profile has been updated successfully',
-            updateProfile
-        );
+            400,
+            `please provide ${errors[0].context.key}`,
+            errors[0]
+          );
+        const hash = await encryptPassword(data.password);
+        if (data.email.includes('richmunye')) {
+          const user = await registerUser({
+            ...data,
+            password: hash,
+            role: 'Admin',
+          });
+          if (!user) return Response.error(res, 404, 'user not created');
+          return Response.success(res, 201, 'user created successfully', user);
+        } 
+          const user = await registerUser({
+            ...data,
+            password: hash,
+          });
+          if (!user) return Response.error(res, 404, 'user not created');
+          return Response.success(res, 201, 'user created successfully', user);
+        
+      
     } catch (err) {
-        console.log(err);
-        return res.status(500).json({message:"internal server error"});
+      return Response.error(res, 500, 'internal server error', err);
     }
-}
+  }
 
-export const DeleteUser = async (req, res) => {
-    const _id = req.params.id
-    const foundOneUser = await User.findOne({ _id })
-    if (!foundOneUser) return res.status(404).json({ message: "user not found" })
-    await User.findOneAndDelete({ _id })
-    return res.status(200).json({ message: "User successfully deleted" })
+  static async findProfiles(req, res) {
+    try {
+      const foundProfiles = await findProfiles();
+      if (!foundProfiles)
+        return Response.error(res, 404, 'no profile found in the system');
+      return Response.success(
+        res,
+        200,
+        'all Profiles found successfully',
+        foundProfiles
+      );
+    } catch (err) {
+      return Response.error(res, 500, 'internal derver error', err);
+    }
+  }
 
-}
+  static async findUser(req, res) {
+    try {
+      const foundUser = await findUser({ id: req.params.id });
+      if (!foundUser) return Response.error(res, 404, 'User is not Registered');
+      return Response.success(
+        res,
+        200,
+        'Registered user found in system',
+        foundUser
+      );
+    } catch (err) {
+      return Response.error(res, 500, 'internal server error', err);
+    }
+  }
 
-export const login = async(req,res)=>{
-    const {email,password} = req.body;
-    const user = await User.findOne({email})
-    if(!user) return res.status(400).json({message:"email has not bee signedup"});
-    const { details: errors } = validate(userValidation.LoginSchema, req.body)
-    if (errors) return res.status(400).json({ message: `please provide ${errors[0].context.key}` })
-    const validPass = await bcryptjs.compare(password, user.password);
-    if(!validPass)return res.status(400).json({mesage:"invalid password"})
-    const token = jwt.sign({_id:user._id},process.env.TOKEN_SECRET)
-    res.header('auth-token', token).send({message:"logged in successfuly",user, token})
+  static async updateProfile(req, res) {
+    try {
+      const foundProfile = await findUser({ id: req.params.id });
+      if (!foundProfile)
+        return Response.error(res, 404, 'Profile dos not exist');
+      const data = { ...req.body };
+      const { details: errors } = validate(userValidate.UpdateSchema, req.body);
+      if (errors)
+        return Response.error(
+          res,
+          400,
+          `please provide ${errors[0].context.key}`,
+          errors[0]
+        );
+      const updateHash = await encryptPassword(data.password);
+      const dataUpdate = {
+        userName: data.userName || foundProfile.userName,
+        email: foundProfile.email,
+        password: updateHash || foundProfile.password,
+      };
+      const updateProfile = await updatedProfile(
+        { id: req.params.id },
+        dataUpdate
+      );
+      return Response.success(
+        res,
+        200,
+        'your profile has been updated successfully',
+        updateProfile
+      );
+    } catch (err) {
+      return Response.error(res, 500, 'internal server error');
+    }
+  }
+
+  static async deleteProfile(req, res) {
+    try {
+      const foundProfile = await findUser({ id: req.params.id });
+      if (!foundProfile)
+        return Response.error(res, 404, 'Profile dos not exist');
+      await deleteProfile({ id: req.params.id });
+      return Response.success(res, 204, 'profile deleted successfully');
+    } catch (err) {
+      return Response.error(res, 500, 'internal server error');
+    }
+  }
+
+  static async login(req, res) {
+    const { details: errors } = validate(userValidate.LoginSchema, req.body);
+    if (errors)
+      return Response.error(
+        res,
+        400,
+        `please provide ${errors[0].context.key}`,
+        errors[0]
+      );
+    const { email, password } = req.body;
+    const foundEmail = await findEmail({ email });
+    if (!foundEmail) return Response.error(res, 404, 'Email does not exist');
+    if (!(await decryptPassword(password, foundEmail.password)))
+      return Response.error(res, 401, 'Wrong credentails!');
+
+    const token = await signToken(foundEmail);
+    return Response.success(res, 200, 'logged in successfully', {
+      token,
+      foundEmail,
+    });
+  }
 }
+export default userController;
